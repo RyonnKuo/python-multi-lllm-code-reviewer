@@ -3,8 +3,8 @@ from langchain.prompts import PromptTemplate
 fst_prompt = PromptTemplate.from_template("""
 You are a JavaScript static analysis engine. Your job is to detect outdated, deprecated, or bad practice code from the following JavaScript snippet, and refactor it to modern syntax.
 
-Analyze the input code line by line. For each problematic line, return:
-- "line": line number or range (e.g., "1", "4-6")
+Analyze the input code function by function. For each problematic function, return:
+- "line": function line number or range (e.g., "1", "4-6")
 - "original": the original code line(s)
 - "issue": short summary of the issue
 - "replacement": the modernized equivalent
@@ -14,16 +14,16 @@ Analyze the input code line by line. For each problematic line, return:
 {code}
 ===
 
-### OUTPUT FORMAT (strict JSON array, no text explanations):
+### OUTPUT FORMAT (strict JSON array only, no text explanations, no commentary, no prose):
 
 [
-  {{
+  {
     "line": "4",
-    "original": "var a = document.all;",
+    "original": "oCtl = document.all.someId;",
     "issue": "Deprecated usage of 'document.all'",
     "replacement": "var a = document.getElementById('someId');",
     "reason": "'document.all' is non-standard and not supported in modern browsers"
-  }}
+  }
 ]
 
 If no problems are found, return: []
@@ -32,30 +32,33 @@ If no problems are found, return: []
 
 # Agent 2：語法審查
 sec_prompt = PromptTemplate.from_template("""
-You are an expert in JavaScript Linter tools.
+You are an expert in JavaScript code linting and modernization.
 
-Carefully review the following proposed code modifications described in JSON format.
-For each item, think step-by-step about the following:
+Analyze the given code proposal **line by line**.
+For each **problematic line**, return a JSON object containing:
+- "original": the original code line(s) from the proposal
+- "replacement": the modern, standards-compliant equivalent code
+- "approve": either "approve" (if the original is acceptable) or "disapprove" (if a change is needed)
+- "approve-reason": a concise explanation (1 sentence) of **why** the original is or isn’t acceptable, based on modern best practices
 
-1. **Syntax Validity** – Is the proposed replacement syntactically correct?
-2. **Modern Browser Compatibility** – Is the suggested code aligned with current JavaScript standards and compatible with modern browsers?
-3. **Practical Feasibility** – Would this change work reliably in real-world JavaScript environments?
+If a line has **no issues**, it must still be included with `"approve": "approve"` and `"replacement"` set to the same as `"original"`.
 
-Take your time to reason through each point before making your decision.
+Ensure strict JSON array output — **no extra text, no markdown, no commentary**.
 
 === Proposal ===
 {proposal}
 ===
 
-Please return a JSON array. Each item should include your judgment and reasoning in the following format:
+### OUTPUT FORMAT (STRICTLY ENFORCED):
+
 [
-  {{
-    "line": <line number of the proposal>,
-    "vote": "approve" | "reject",
-    "comment": "<Step-by-step explanation of your reasoning and conclusion>"
-  }}
+  {
+    "original": "var a = document.all;",
+    "replacement": "var a = document.getElementById('someId');",
+    "approve": "disapprove",
+    "approve-reason": "'document.all' is non-standard and not supported in modern browsers"
+  },
 ]
-Ensure the JSON is well-formed and valid, with no dangling commas or unexpected characters.
 """)
 
 # Agent 3：語意一致性
