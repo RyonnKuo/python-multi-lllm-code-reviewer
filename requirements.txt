@@ -10,3 +10,4 @@ faiss-cpu
 chardet
 json-repair
 autogen
+fix-busted-json

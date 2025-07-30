@@ -11,6 +11,9 @@ VECTOR_STORE_PATH = "./common/vectorstore"
 EMBEDDING_MODEL = "nomic-embed-text"
 
 # RAG function
+# 建立RAG
+# all_chunks = collect_all_chunks(SOURCE_DIR) # SOURCE_DIR包含正確的程式碼、規則、寫法、改法等等
+# build_vector_store(all_chunks) # 建立向量資料
 
 # 移除簡體註解
 def remove_simplified_chinese(text: str) -> str:
@@ -23,7 +26,7 @@ def read_file_with_detected_encoding(file_path: str) -> str:
         raw = f.read()
     return raw.decode('GB2312', errors='ignore')
 
-def extract_vb_functions(file_path: str) -> List[LangDocument]:
+def extract_functions(file_path: str) -> List[LangDocument]:
 
     raw_code = read_file_with_detected_encoding(file_path)
     cleaned_code = remove_simplified_chinese(raw_code)
@@ -52,13 +55,14 @@ def extract_vb_functions(file_path: str) -> List[LangDocument]:
 
     return docs
 
-def collect_all_vb_chunks(directory: str) -> List[LangDocument]:
+def collect_all_chunks(directory: str) -> List[LangDocument]:
     all_docs = []
     for root, _, files in os.walk(directory):
         for file in files:
-            if file.endswith(".vb"):
+            # 可以改成別的，這裡暫時只用.js
+            if file.endswith(".js"):
                 file_path = os.path.join(root, file)
-                chunks = extract_vb_functions(file_path)
+                chunks = extract_functions(file_path)
                 all_docs.extend(chunks)
     return all_docs
 
